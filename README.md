@@ -2,7 +2,7 @@
 
 [English](README_EN.md) | 中文
 
-一个使用 Pixi.js v8.0 实现的 Boids 算法演示项目，使用四叉树优化了邻居查找，除了基本的群体行为外，还添加了障碍物避免功能。
+一个使用 Pixi.js v8.0 实现的 Boids 算法演示项目，使用四叉树优化了邻居查找，除了基本的群体行为外，还添加了障碍物规避功能。
 
 🌐 **在线演示**: [https://riteam.github.io/boids/](https://riteam.github.io/boids/)
 

@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boids Simulation in JavaScript</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #121212; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <canvas id="boidsCanvas"></canvas>
+    <script>
+        // --- Setup Canvas and Context ---
+        const canvas = document.getElementById('boidsCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // --- Vector Class for 2D Math ---
+        class Vector {
+            constructor(x = 0, y = 0) {
+                this.x = x;
+                this.y = y;
+            }
+
+            add(other) {
+                this.x += other.x;
+                this.y += other.y;
+                return this;
+            }
+
+            subtract(other) {
+                this.x -= other.x;
+                this.y -= other.y;
+                return this;
+            }
+
+            multiply(scalar) {
+                this.x *= scalar;
+                this.y *= scalar;
+                return this;
+            }
+            
+            divide(scalar) {
+                if (scalar !== 0) {
+                    this.x /= scalar;
+                    this.y /= scalar;
+                }
+                return this;
+            }
+
+            magnitude() {
+                return Math.sqrt(this.x * this.x + this.y * this.y);
+            }
+
+            normalize() {
+                const mag = this.magnitude();
+                if (mag > 0) {
+                    this.divide(mag);
+                }
+                return this;
+            }
+
+            static distance(v1, v2) {
+                const dx = v1.x - v2.x;
+                const dy = v1.y - v2.y;
+                return Math.sqrt(dx * dx + dy * dy);
+            }
+        }
+
+        // --- Simulation Constants ---
+        const FLOCK_SIZE = 150;
+        const VISUAL_RANGE = 75.0;
+        const SEPARATION_DISTANCE = 25.0;
+        const COHESION_FACTOR = 0.005;
+        const SEPARATION_FACTOR = 0.1;
+        const ALIGNMENT_FACTOR = 0.05;
+        const MAX_SPEED = 7;
+        const BOID_SIZE = 5; // Visual size of the boid triangle
+
+        const flock = [];
+
+        // --- Boid Class ---
+        class Boid {
+            constructor() {
+                this.position = new Vector(Math.random() * canvas.width, Math.random() * canvas.height);
+                this.velocity = new Vector(Math.random() * 2 - 1, Math.random() * 2 - 1);
+                this.velocity.normalize().multiply(Math.random() * MAX_SPEED);
+            }
+
+            // Keep boids within the screen space
+            wrapEdges() {
+                if (this.position.x > canvas.width) this.position.x = 0;
+                if (this.position.x < 0) this.position.x = canvas.width;
+                if (this.position.y > canvas.height) this.position.y = 0;
+                if (this.position.y < 0) this.position.y = canvas.height;
+            }
+            
+            // Calculate cohesion: steer to move toward the average position of local flockmates
+            calculateCohesion(flock) {
+                let centerOfMass = new Vector(0, 0);
+                let neighborCount = 0;
+
+                for (let otherBoid of flock) {
+                    const distance = Vector.distance(this.position, otherBoid.position);
+                    if (otherBoid !== this && distance < VISUAL_RANGE) {
+                        centerOfMass.add(otherBoid.position);
+                        neighborCount++;
+                    }
+                }
+
+                if (neighborCount > 0) {
+                    centerOfMass.divide(neighborCount);
+                    // Get a vector pointing from the boid's position to the center of mass
+                    let desiredVelocity = new Vector(centerOfMass.x, centerOfMass.y);
+                    desiredVelocity.subtract(this.position);
+                    
+                    let steeringForce = desiredVelocity;
+                    steeringForce.multiply(COHESION_FACTOR);
+                    return steeringForce;
+                } else {
+                    return new Vector(0, 0);
+                }
+            }
+
+            // Calculate separation: steer to avoid crowding local flockmates
+            calculateSeparation(flock) {
+                let steeringVector = new Vector(0, 0);
+                
+                for (let otherBoid of flock) {
+                    const distance = Vector.distance(this.position, otherBoid.position);
+                    if (otherBoid !== this && distance < SEPARATION_DISTANCE) {
+                        // Calculate a vector pointing away from the other boid
+                        let difference = new Vector(this.position.x, this.position.y);
+                        difference.subtract(otherBoid.position);
+                        
+                        // The closer the other boid, the stronger the repulsion
+                        difference.divide(distance * distance); // Weight by distance
+                        steeringVector.add(difference);
+                    }
+                }
+                steeringVector.multiply(SEPARATION_FACTOR);
+                return steeringVector;
+            }
+
+            // Calculate alignment: steer towards the average heading of local flockmates
+            calculateAlignment(flock) {
+                let averageVelocity = new Vector(0, 0);
+                let neighborCount = 0;
+
+                for (let otherBoid of flock) {
+                    const distance = Vector.distance(this.position, otherBoid.position);
+                    if (otherBoid !== this && distance < VISUAL_RANGE) {
+                        averageVelocity.add(otherBoid.velocity);
+                        neighborCount++;
+                    }
+                }
+
+                if (neighborCount > 0) {
+                    averageVelocity.divide(neighborCount);
+                    // Steer towards the average velocity
+                    let steeringForce = averageVelocity;
+                    steeringForce.subtract(this.velocity);
+                    steeringForce.multiply(ALIGNMENT_FACTOR);
+                    return steeringForce;
+                } else {
+                    return new Vector(0, 0);
+                }
+            }
+
+            limitSpeed() {
+                const speed = this.velocity.magnitude();
+                if (speed > MAX_SPEED) {
+                    this.velocity.normalize().multiply(MAX_SPEED);
+                }
+            }
+
+            update(flock) {
+                const cohesionVector = new Vector(0, 0);
+                const separationVector = this.calculateSeparation(flock);
+                const alignmentVector = this.calculateAlignment(flock);
+
+                // Apply the steering forces to the boid's velocity
+                this.velocity.add(cohesionVector);
+                this.velocity.add(separationVector);
+                this.velocity.add(alignmentVector);
+
+                this.limitSpeed();
+
+                // Update the boid's position
+                this.position.add(this.velocity);
+                
+                // Handle screen edges
+                this.wrapEdges();
+            }
+            
+            draw() {
+                const angle = Math.atan2(this.velocity.y, this.velocity.x);
+                ctx.save();
+                ctx.translate(this.position.x, this.position.y);
+                ctx.rotate(angle);
+                ctx.beginPath();
+                // A simple triangle shape
+                ctx.moveTo(BOID_SIZE, 0);
+                ctx.lineTo(-BOID_SIZE, -BOID_SIZE / 2);
+                ctx.lineTo(-BOID_SIZE, BOID_SIZE / 2);
+                ctx.closePath();
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        // --- Initialization and Animation Loop ---
+        function initializeFlock() {
+            for (let i = 0; i < FLOCK_SIZE; i++) {
+                flock.push(new Boid());
+            }
+        }
+
+        function animate() {
+            // Clear the canvas for the new frame
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Update and draw each boid
+            for (let boid of flock) {
+                boid.update(flock);
+                boid.draw();
+            }
+
+            // Request the next frame
+            requestAnimationFrame(animate);
+        }
+        
+        // Start the simulation
+        initializeFlock();
+        animate();
+
+        // Handle window resizing
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+    </script>
+</body>
+</html>

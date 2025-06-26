@@ -1,6 +1,5 @@
 import Arrow from "./arrow";
 import { Application, Container, Graphics } from "pixi.js";
-import _ from "lodash";
 import V from "./V2D";
 import Obstacle from "./obstacle";
 import QuadTree from "./quadtree";
@@ -138,7 +137,7 @@ export default class Boids {
     // 更新四叉树
     this.quadTree.update(this.#arrows)
 
-    this.#arrows.forEach((curr, index) => {
+    this.#arrows.forEach((curr) => {
       const neibours = this.getNeibours(curr)
 
 
@@ -207,7 +206,7 @@ export default class Boids {
           console.log(curr.v);
         }
 
-        let sqrThreshold2 = avoidanceThreshold2 * avoidanceThreshold2
+        const sqrThreshold2 = avoidanceThreshold2 * avoidanceThreshold2
         const nearestPoints = this.obstacle.getNearestPoints(curr, avoidanceThreshold)
         let count = 0
         let minDis = Infinity
@@ -223,9 +222,9 @@ export default class Boids {
             const t = avoid.normalize().div(d || 0.00001)
 
 
-            this.shape.moveTo(curr.x, curr.y);
-            this.shape.lineTo(point.x, point.y)
-            this.shape.stroke({ color: 'green', width: 1 })
+            // this.shape.moveTo(curr.x, curr.y);
+            // this.shape.lineTo(point.x, point.y)
+            // this.shape.stroke({ color: 'green', width: 1 })
 
             avoidanceSteering.add(t)
           }

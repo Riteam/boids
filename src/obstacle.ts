@@ -1,4 +1,4 @@
-import { Graphics, Application, RenderTexture } from "pixi.js";
+import { Graphics, Application } from "pixi.js";
 import V from "./V2D";
 import _ from "lodash";
 

@@ -1,6 +1,5 @@
 import { Graphics, Application } from "pixi.js";
 import V from "./V2D";
-import _ from "lodash";
 import Utils from "./Utils";
 import { minSpeed, maxSpeed } from "./Config.json"
 

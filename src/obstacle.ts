@@ -1,4 +1,4 @@
-import { Graphics, Application } from "pixi.js";
+import { Graphics, Container } from "pixi.js";
 import V from "./V2D";
 import _ from "lodash";
 
@@ -25,15 +25,13 @@ export default class Obstacle {
   polygon: Graphics;
   lines: Graphics;
 
-  /**
-   * 构造函数
-   * @param app PIXI应用实例
-   */
-  constructor(public app: Application) {
+  constructor(container: Container) {
     this.polygon = new Graphics();
     this.lines = new Graphics();
-    this.segments = [];
 
+    this.segments = [];
+    container.addChild(this.polygon)
+    container.addChild(this.lines)
   }
 
   /**
@@ -41,17 +39,15 @@ export default class Obstacle {
    * @param points 多边形顶点
    * @param cutPoints 镂空顶点（可选）
    */
-  private addDiagonalLines(points: V[]) {
+  private addDiagonalLines() {
     const { lines } = this;
 
     // 计算多边形的边界框
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    for (const point of points) {
-      minX = Math.min(minX, point.x);
-      minY = Math.min(minY, point.y);
-      maxX = Math.max(maxX, point.x);
-      maxY = Math.max(maxY, point.y);
-    }
+    const aabb = this.polygon.getBounds()
+    let minX = aabb.minX
+    let minY = aabb.minY
+    let maxX = aabb.maxX
+    let maxY = aabb.maxY
 
     // 扩展边界以确保完全覆盖
     const padding = 50;
@@ -63,8 +59,8 @@ export default class Obstacle {
     // 斜线间隔
     const lineSpacing = 20;
 
+    const diagonalLength = Math.hypot(maxX - minX, maxY - minY);
     // 计算需要多少条斜线来覆盖整个区域
-    const diagonalLength = Math.sqrt((maxX - minX) ** 2 + (maxY - minY) ** 2);
     const numLines = Math.ceil(diagonalLength / lineSpacing) * 1.6; // 乘以2确保完全覆盖
 
     // 绘制斜线（45度角）
@@ -73,16 +69,16 @@ export default class Obstacle {
     // 从右上到左下的斜线
     for (let i = 0; i < numLines; i++) {
       const offset = i * lineSpacing;
-      const startX = maxX - offset + 420;
+      const startX = maxX - offset;
       const startY = minY;
-      const endX = maxX - offset - (maxY - minY) + 420;
+      const endX = maxX - offset - (maxY - minY);
       const endY = maxY;
 
       lines.moveTo(startX, startY);
       lines.lineTo(endX, endY);
     }
 
-    this.lines.mask = this.polygon.clone()
+    // this.lines.mask = this.polygon.clone()
   }
 
   createPolygonShape(points: V[], cutPoints?: V[]) {
@@ -115,21 +111,11 @@ export default class Obstacle {
     }
 
 
-    this.addDiagonalLines(points)
+    this.addDiagonalLines()
 
     // this.draw()
+    return this
   }
-
-  /**
-   * 绘制障碍物
-   * 使用PIXI Graphics绘制所有障碍物方块
-   */
-  // private draw() {
-  //   this.polygon.clear();
-
-  //   // 设置填充颜色（棕色）和边框样式
-  //   this.polygon.fill({ color: 0xa76226, alpha: 1 });
-  // }
 
   /**
    * 检查点是否在障碍物附近
@@ -137,16 +123,12 @@ export default class Obstacle {
    * @param threshold 距离阈值，默认为20像素
    * @returns 如果点在障碍物附近返回true，否则返回false
    */
-  isNearObstacle(point: V, threshold: number = 20): boolean {
-    // 遍历所有障碍物线段
-    for (const segment of this.segments) {
-      // 计算点到线段的距离
-      const distance = this.pointToLineDistance(point, segment.start, segment.end);
-      if (distance < threshold) {
-        return true; // 如果距离小于阈值，说明点在障碍物附近
-      }
-    }
-    return false;
+  isHitBounds(point: V, radius: number = 20): boolean {
+    const aabb = this.polygon.getBounds()
+    const dx = _.clamp(point.x, aabb.minX, aabb.maxX) - point.x
+    const dy = _.clamp(point.y, aabb.minY, aabb.maxY) - point.y
+    const distance = dx * dx + dy * dy
+    return distance < radius * radius
   }
 
   /**
@@ -219,46 +201,6 @@ export default class Obstacle {
       }
     }
     return points
-  }
-
-
-  /**
-   * 获取避障力向量
-   * 计算从障碍物指向指定位置的避障力
-   * @param position 当前位置向量
-   * @param threshold 影响范围阈值，默认为30像素
-   * @returns 避障力向量
-   */
-  getAvoidanceForce(position: V, threshold: number = 30): V {
-    const avoidanceForce = new V(0, 0); // 初始化避障力向量
-    let totalWeight = 0; // 总权重
-
-    // 遍历所有障碍物线段
-    for (const segment of this.segments) {
-      // 计算当前位置到线段的距离
-      const distance = this.pointToLineDistance(position, segment.start, segment.end);
-
-      // 如果距离在影响范围内
-      if (distance < threshold) {
-        // 计算从障碍物到当前位置的方向向量
-        const midPoint = V.add(segment.start, segment.end).div(2); // 线段中点向量
-        const toObstacle = V.sub(midPoint, position);
-
-        // 距离越近，避障力越大（权重计算）
-        const weight = (threshold - distance) / threshold;
-        toObstacle.normalize().mult(weight); // 归一化并乘以权重
-        avoidanceForce.add(toObstacle); // 累加到总避障力
-        totalWeight += weight;
-      }
-    }
-
-    // 如果有避障力，进行归一化处理
-    if (totalWeight > 0) {
-      avoidanceForce.div(totalWeight);
-      avoidanceForce.normalize();
-    }
-
-    return avoidanceForce;
   }
 
   /**

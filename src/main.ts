@@ -1,4 +1,4 @@
-import { Application, Sprite, RenderTexture } from "pixi.js";
+import { Application, Sprite, RenderTexture, Container } from "pixi.js";
 import buildGrid from "./build-grid";
 import Boids from "./boids";
 import Obstacle from "./obstacle";
@@ -39,15 +39,12 @@ import { gridSize } from "./Config.json"
   // Append the application canvas to the document body
   document.getElementById("pixi-container")!.appendChild(app.canvas);
 
-  // 创建L形状的障碍物
-  const obstacle = new Obstacle(app);
-  createLetterJ(obstacle, 240, 280)
-  createLetterR(obstacle, 440, 280)
-  createLetterC(obstacle, 680, 280)
-
   const ArrowBoids = new Boids(app, 200)
 
-  ArrowBoids.setObstacle(obstacle)
+  const obstacleGroup = new Container()
+  ArrowBoids.addObstacle(createLetterJ(obstacleGroup, 240, 280))
+  ArrowBoids.addObstacle(createLetterR(obstacleGroup, 440, 280))
+  ArrowBoids.addObstacle(createLetterC(obstacleGroup, 680, 280))
 
 
   const shadowTexture = RenderTexture.create({ width: app.screen.width, height: app.screen.height });
@@ -59,8 +56,7 @@ import { gridSize } from "./Config.json"
 
 
 
-  app.stage.addChild(obstacle.polygon)
-  app.stage.addChild(obstacle.lines)
+  app.stage.addChild(obstacleGroup)
   app.stage.addChild(buildGrid(gridSize))
   app.stage.addChild(shadowSprite)
   app.stage.addChild(ArrowBoids.container)
@@ -87,7 +83,7 @@ import { gridSize } from "./Config.json"
 
 
 
-function createLetterJ(obstacle: Obstacle, startX: number, startY: number) {
+function createLetterJ(container: Container, startX: number, startY: number) {
   const P = new Path(new V(startX, startY), gridSize)
   P.right(4)
     .bottom(1)
@@ -101,9 +97,10 @@ function createLetterJ(obstacle: Obstacle, startX: number, startY: number) {
     .left(1)
     .topLeft()
 
-  obstacle.createPolygonShape(P.path)
+  return new Obstacle(container).createPolygonShape(P.path)
 }
-function createLetterR(obstacle: Obstacle, startX: number, startY: number) {
+
+function createLetterR(container: Container, startX: number, startY: number) {
   const P = new Path(new V(startX, startY), gridSize)
     .right(3)
     .bottomRight()
@@ -123,9 +120,10 @@ function createLetterR(obstacle: Obstacle, startX: number, startY: number) {
     .left(2)
     .top()
 
-  obstacle.createPolygonShape(P.path, P2.path)
+  return new Obstacle(container).createPolygonShape(P.path, P2.path)
 }
-function createLetterC(obstacle: Obstacle, startX: number, startY: number) {
+
+function createLetterC(container: Container, startX: number, startY: number) {
   const P = new Path(new V(startX, startY), gridSize)
     .right(2)
     .bottomLeft(1)
@@ -138,5 +136,5 @@ function createLetterC(obstacle: Obstacle, startX: number, startY: number) {
     .top(3)
     .topRight()
 
-  obstacle.createPolygonShape(P.path)
+  return new Obstacle(container).createPolygonShape(P.path)
 }

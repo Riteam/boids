@@ -16,7 +16,7 @@ const cohesionFactor = 1.4
 const avoidanceThreshold = 80
 const avoidanceThreshold2 = 10
 const avoidanceFactor = 1.2
-const avoidanceFactor2 = 5
+const avoidanceFactor2 = 6
 
 const accelerationLimit = 0.1
 
@@ -24,14 +24,14 @@ export default class Boids {
   container: Container
   #arrows: Arrow[]
   shape: Graphics
-  obstacle: Obstacle | null
+  obstacle: Obstacle[]
   quadTree: QuadTree
 
   constructor(public app: Application, public count: number) {
     this.container = new Container()
     this.#arrows = []
     this.shape = new Graphics()
-    this.obstacle = null
+    this.obstacle = []
 
     // 初始化四叉树，覆盖整个屏幕
     this.quadTree = new QuadTree({
@@ -62,8 +62,8 @@ export default class Boids {
     this.shape.zIndex = 10
   }
 
-  setObstacle(obstacle: Obstacle) {
-    this.obstacle = obstacle
+  addObstacle(obstacle: Obstacle) {
+    this.obstacle.push(obstacle)
   }
 
   // 检查两个向量之间的角度差是否在180度范围内
@@ -195,21 +195,34 @@ export default class Boids {
           .max(accelerationLimit)
       }
 
+      // if (curr === this.#arrows[0]) {
+      //   this.shape.circle(curr.x, curr.y, avoidanceThreshold)
+      //   this.shape.stroke({ color: 'green', width: 1 })
+      // }
       // 避障
       const avoidanceSteering = new V(0, 0)
-      if (this.obstacle) {
+      let count = 0
+      // 过滤aabb碰撞到的障碍物
+      const nearestObstacles = this.obstacle.filter(o => o.isHitBounds(curr, avoidanceThreshold))
+      for (let o of nearestObstacles) {
+        // debug
+        // if (curr === this.#arrows[0]) {
+        // this.shape.moveTo(curr.x, curr.y)
+        // this.shape.lineTo(o.polygon.getBounds().x, o.polygon.getBounds().y)
+        // this.shape.stroke({ color: 'red', width: 1 })
+        // }
 
-        if (this.obstacle.isPointInsidePolygon(curr)) {
-          const newPos = this.obstacle.pushPointToNearestEdge(curr)
+        // 撞到了！！！
+        if (o.isPointInsidePolygon(curr)) {
+          const newPos = o.pushPointToNearestEdge(curr)
           curr.v = V.sub(newPos, curr)
           curr.copy(newPos)
-          console.log(curr.v);
         }
 
         const sqrThreshold2 = avoidanceThreshold2 * avoidanceThreshold2
-        const nearestPoints = this.obstacle.getNearestPoints(curr, avoidanceThreshold)
-        let count = 0
+        const nearestPoints = o.getNearestPoints(curr, avoidanceThreshold)
         let minDis = Infinity
+
         for (const point of nearestPoints) {
 
           if (this.isInFrontView(curr, point)) {

@@ -3,7 +3,7 @@ import V from "./V2D";
 import _ from "lodash";
 import { backgroundColor } from "./Config.json";
 
-const strokeWidth = 2
+const strokeWidth = 4
 
 /**
  * 障碍物线段接口
@@ -47,6 +47,7 @@ export default class Obstacle {
     // 计算多边形的边界框
     const aabb = this.polygon.getBounds()
     const { width, height, x, y } = aabb
+
     lines.x = x
     lines.y = y
 
@@ -56,6 +57,7 @@ export default class Obstacle {
     let y1 = 0
     let x2 = 0
     let y2 = 0
+
     // 斜线从右上到左下
     for (let i = 0; i < step; i++) {
       if (x1 < width) {
@@ -92,6 +94,9 @@ export default class Obstacle {
       lines.lineTo(x2, y2)
     }
 
+    lines.x -= strokeWidth
+    lines.y -= strokeWidth
+
     lines.stroke({ color: 0xffffff, pixelLine: true });
     this.lines.mask = this.polygon.clone()
   }
@@ -116,7 +121,7 @@ export default class Obstacle {
 
     // 如果没有纹理，使用原来的纯色填充
     polygon.fill({ color: backgroundColor, alpha: 1 });
-    polygon.stroke({ color: 0xffffff, alpha: 1, width: 4, join: 'round' });
+    polygon.stroke({ color: 0xffffff, alpha: 1, width: strokeWidth, join: 'round' });
 
     // 镂空
     if (cutPoints && cutPoints.length >= 3) {

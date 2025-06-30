@@ -350,6 +350,11 @@ class V2D {
     this.y += v.y * scale;
     return this;
   }
+
+  reflect(normal: V2D): V2D {
+    const dot = this.dot(normal)
+    return this.sub(normal.mult(2 * dot))
+  }
 }
 
 export default V2D;

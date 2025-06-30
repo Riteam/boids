@@ -52,41 +52,33 @@ document.addEventListener("keydown", e => {
 
   const shadowSprite = new Sprite(shadowTexture);
   shadowSprite.tint = 0x000000;    // 着色为黑色
-  shadowSprite.alpha = 0.2;        // 根据需要调整阴影透明度
+  shadowSprite.alpha = 0.1;        // 根据需要调整阴影透明度
   shadowSprite.position.set(3, 4); // 设置阴影偏移
 
 
   GridLines.build(gridSize)
 
-  // const gridsTexture = GridLines.g.clone()
-  // gridsTexture.x = 20
-  // gridsTexture.y = 20
-  // gridsTexture.angle = 45
-  // gridsTexture.scale = .5
-  // gridsTexture.mask = obstacleGroup
-
-
-
   app.stage.addChild(GridLines.g)
-  // app.stage.addChild(gridsTexture)
   app.stage.addChild(obstacleGroup)
   app.stage.addChild(shadowSprite)
   app.stage.addChild(ArrowBoids.container)
 
+  const update = (delta: number) => {
+    app.renderer.render({
+      container: ArrowBoids.container,
+      target: shadowTexture,
+      clear: true
+    });
+    ArrowBoids.update(delta)
+  }
   // Listen for animate update
   app.ticker.add((time) => {
-    // Just for fun, let's rotate mr rabbit a little.
-    // * Delta is 1 if running at 100% performance *
-    // * Creates frame-independent transformation *
-    // bunny.rotation += 0.1 * time.deltaTime;
 
     if (!paused) {
-      ArrowBoids.update(time.deltaTime)
-      app.renderer.render({ container: ArrowBoids.container, target: shadowTexture, clear: true });
+      update(time.deltaTime)
     } else if (nextFrame) {
       nextFrame = false
-      ArrowBoids.update(time.deltaTime)
-      app.renderer.render({ container: ArrowBoids.container, target: shadowTexture, clear: true });
+      update(time.deltaTime)
     }
     // app.render()
   });

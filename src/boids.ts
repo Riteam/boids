@@ -10,13 +10,10 @@ const cohesionRadius = 60
 
 const seprationFactor = 1.5
 const alignmentFactor = 1
-const cohesionFactor = 1.4
+const cohesionFactor = 1.6
 
 // 避障力权重
 const avoidanceThreshold = 100
-const avoidanceThreshold2 = 10
-const avoidanceFactor = 1.4
-const avoidanceFactor2 = 6
 
 const accelerationLimit = 0.1
 
@@ -41,11 +38,6 @@ export default class Boids {
       height: app.screen.height
     }, 10, 4)
 
-    // for (let i = 0; i < Math.min(count, 10); i++) {
-    //   const arrow = new Arrow(app, _.random(0, app.screen.width), _.random(0, app.screen.height))
-    //   this.#arrows.push(arrow)
-    //   this.container.addChild(arrow.shape)
-    // }
 
     const timer = setInterval(() => {
       if (this.#arrows.length >= count) {
@@ -60,6 +52,11 @@ export default class Boids {
 
     app.stage.addChild(this.shape)
     this.shape.zIndex = 10
+  }
+
+  addArrow(arrow: Arrow) {
+    this.#arrows.push(arrow)
+    this.container.addChild(arrow.shape)
   }
 
   addObstacle(obstacle: Obstacle) {
@@ -195,69 +192,59 @@ export default class Boids {
           .max(accelerationLimit)
       }
 
-      // if (curr === this.#arrows[0]) {
-      //   this.shape.circle(curr.x, curr.y, avoidanceThreshold)
-      //   this.shape.stroke({ color: 'green', width: 1 })
-      // }
       // 避障
       const avoidanceSteering = new V(0, 0)
-      let count = 0
-      const sqrThreshold2 = avoidanceThreshold2 * avoidanceThreshold2
       // 过滤aabb碰撞到的障碍物
       const nearestObstacles = this.obstacle.filter(o => o.isHitBounds(curr, avoidanceThreshold))
-      for (let o of nearestObstacles) {
+      if (nearestObstacles.length > 0) {
+        let count = 0
+        for (let o of nearestObstacles) {
 
-        // debug
-        // if (curr === this.#arrows[0]) {
-        // this.shape.moveTo(curr.x, curr.y)
-        // this.shape.lineTo(o.polygon.getBounds().x, o.polygon.getBounds().y)
-        // this.shape.stroke({ color: 'red', width: 1 })
-        // }
+          // debug
+          // if (curr === this.#arrows[0]) {
+          // this.shape.moveTo(curr.x, curr.y)
+          // this.shape.lineTo(o.polygon.getBounds().x, o.polygon.getBounds().y)
+          // this.shape.stroke({ color: 'red', width: 1 })
+          // }
 
-        // 撞到了！！！
-        if (o.isPointInsidePolygon(curr)) {
-          const newPos = o.pushPointToNearestEdge(curr)
-          curr.v = V.sub(newPos, curr)
-          curr.copy(newPos)
-        }
+          // 撞到了！！！
+          if (o.isPointInsidePolygon(curr)) {
+            const nearestPoint = o.pushPointToNearestEdge(curr)
+            const normal = V.sub(nearestPoint, curr).normalize() // 法向量
+            curr.v.reflect(normal) // 反射
+              .mult(0.5)
+            curr.copy(nearestPoint)
 
-        const nearestPoints = o.getNearestPoints(curr, avoidanceThreshold)
+            curr.knocked_out = true
+            curr.knocked_out_time = 30
+          }
 
-        for (const point of nearestPoints) {
+          const nearestPoints = o.getNearestPoints(curr, avoidanceThreshold)
 
-          if (this.isInFrontView(curr, point)) {
-            count++
-            const avoid = V.sub(curr, point)
-            const d = avoid.sqrMag()
+          for (const point of nearestPoints) {
 
-            // if (d < sqrThreshold2) {
-            //   avoidanceSteering
-            // } else {
-            //   avoidanceSteering.mult(avoidanceFactor)
-            // }
+            if (this.isInFrontView(curr, point)) {
+              count++
+              const avoid = V.sub(curr, point)
+              const d = avoid.sqrMag()
 
-            const t = avoid.normalize().div(d || 0.00001)
+              const t = avoid.normalize().div(d || 0.00001)
 
 
-            // this.shape.moveTo(curr.x, curr.y);
-            // this.shape.lineTo(point.x, point.y)
-            // this.shape.stroke({ color: 'green', width: 1 })
+              // this.shape.moveTo(curr.x, curr.y);
+              // this.shape.lineTo(point.x, point.y)
+              // this.shape.stroke({ color: 'green', width: 1 })
 
-            avoidanceSteering.add(t)
+              avoidanceSteering.add(t)
+            }
           }
         }
-      }
-
-
-      if (count) {
-        avoidanceSteering
-          .normalize()
-          .div(count)
-          .max(accelerationLimit)
-
-        // if (minDis < sqrThreshold2) {
-        //   avoidanceSteering.mult(avoidanceFactor2)
-        // }
+        if (count) {
+          avoidanceSteering
+            .normalize()
+            .div(count)
+            .max(accelerationLimit)
+        }
       }
 
 

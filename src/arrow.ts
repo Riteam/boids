@@ -7,6 +7,8 @@ export default class Arrow extends V {
   v: V;
   shape: Graphics;
   desired: V;
+  knocked_out: boolean
+  knocked_out_time: number
 
   constructor(public app: Application, public x: number, public y: number) {
     super(x, y)
@@ -14,20 +16,38 @@ export default class Arrow extends V {
 
     this.shape = new Graphics()
     this.desired = new V(0, 0)
+    this.knocked_out = false
+    this.knocked_out_time = 0
   }
 
   move(delta: number = 1) {
     // 速度转化为位移
     // 添加0-2度的随机噪声
+
     const noiseDeg = -2 + Utils.random() * 4; // -2到2度
     const noiseRad = noiseDeg * Math.PI / 180;
     this.v.rotate(noiseRad);
 
     this.v.sclAdd(this.desired, delta)
-    this.v.min(minSpeed)
+    this.v.min(this.knocked_out ? minSpeed : minSpeed)
     this.v.max(maxSpeed)
+
+    if (this.knocked_out) {
+      this.v.mult(0.5)
+      this.knocked_out_time -= delta
+      if (this.knocked_out_time <= 10) {
+        this.v.zero()
+      }
+      if (this.knocked_out_time <= 1) {
+        this.knocked_out = false
+      }
+    }
+
     this.sclAdd(this.v, delta);
     this.checkBounds()
+
+
+
   }
 
   checkBounds() {
@@ -48,12 +68,16 @@ export default class Arrow extends V {
     shape.lineTo(-10, -10);
     shape.lineTo(-10, 10);
     // shape.lineTo(12, 0);
-    shape.fill({ color: 'yellow' });
+    shape.fill({ color: this.knocked_out ? 'red' : 'yellow' });
+
 
     shape.scale.set(0.6)
     shape.x = x
     shape.y = y
-    shape.rotation = v.angle();
+
+    if (!v.isZero()) {
+      shape.rotation = v.angle();
+    }
 
   }
 }

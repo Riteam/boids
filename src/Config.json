@@ -8,5 +8,6 @@
   "seprationFactor": 1.5,
   "alignmentFactor": 1,
   "cohesionFactor": 1.4,
-  "avoidanceThreshold": 60
+  "avoidanceThreshold": 60,
+  "backgroundColor": "0x1099bb"
 }

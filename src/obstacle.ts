@@ -1,9 +1,9 @@
 import { Graphics, Container } from "pixi.js";
 import V from "./V2D";
 import _ from "lodash";
+import { backgroundColor } from "./Config.json";
 
-
-const strokeWidth = 3
+const strokeWidth = 2
 
 /**
  * 障碍物线段接口
@@ -42,43 +42,58 @@ export default class Obstacle {
   private addDiagonalLines() {
     const { lines } = this;
 
+    const lineSpacing = 20; // 间隔
+
     // 计算多边形的边界框
     const aabb = this.polygon.getBounds()
-    let minX = aabb.minX
-    let minY = aabb.minY
-    let maxX = aabb.maxX
-    let maxY = aabb.maxY
+    const { width, height, x, y } = aabb
+    lines.x = x
+    lines.y = y
 
-    // 扩展边界以确保完全覆盖
-    const padding = 50;
-    minX -= padding;
-    minY -= padding;
-    maxX += padding;
-    maxY += padding;
+    const step = Math.ceil((width + height) / lineSpacing)
 
-    // 斜线间隔
-    const lineSpacing = 20;
-
-    const diagonalLength = Math.hypot(maxX - minX, maxY - minY);
-    // 计算需要多少条斜线来覆盖整个区域
-    const numLines = Math.ceil(diagonalLength / lineSpacing) * 1.6; // 乘以2确保完全覆盖
-
-    // 绘制斜线（45度角）
-    lines.stroke({ color: 0xffffff, width: strokeWidth });
-
-    // 从右上到左下的斜线
-    for (let i = 0; i < numLines; i++) {
-      const offset = i * lineSpacing;
-      const startX = maxX - offset;
-      const startY = minY;
-      const endX = maxX - offset - (maxY - minY);
-      const endY = maxY;
-
-      lines.moveTo(startX, startY);
-      lines.lineTo(endX, endY);
+    let x1 = 0
+    let y1 = 0
+    let x2 = 0
+    let y2 = 0
+    // 斜线从右上到左下
+    for (let i = 0; i < step; i++) {
+      if (x1 < width) {
+        x1 += lineSpacing
+      } else {
+        y1 += lineSpacing
+      }
+      if (y2 < height) {
+        y2 += lineSpacing
+      } else {
+        x2 += lineSpacing
+      }
+      lines.moveTo(x1, y1)
+      lines.lineTo(x2, y2)
     }
 
-    // this.lines.mask = this.polygon.clone()
+    // 斜线从左上到右下
+    x1 = 0
+    y1 = height
+    x2 = 0
+    y2 = height
+    for (let i = 0; i < step; i++) {
+      if (x1 < width) {
+        x1 += lineSpacing
+      } else {
+        y1 -= lineSpacing
+      }
+      if (y2 > 0) {
+        y2 -= lineSpacing
+      } else {
+        x2 += lineSpacing
+      }
+      lines.moveTo(x1, y1)
+      lines.lineTo(x2, y2)
+    }
+
+    lines.stroke({ color: 0xffffff, pixelLine: true });
+    this.lines.mask = this.polygon.clone()
   }
 
   createPolygonShape(points: V[], cutPoints?: V[]) {
@@ -100,8 +115,8 @@ export default class Obstacle {
     polygon.poly(points)
 
     // 如果没有纹理，使用原来的纯色填充
-    polygon.fill({ color: 0xa76226, alpha: 0 });
-    polygon.stroke({ color: 0xffffff, alpha: 1, width: strokeWidth, join: 'round' });
+    polygon.fill({ color: backgroundColor, alpha: 1 });
+    polygon.stroke({ color: 0xffffff, alpha: 1, width: 4, join: 'round' });
 
     // 镂空
     if (cutPoints && cutPoints.length >= 3) {
@@ -112,7 +127,6 @@ export default class Obstacle {
 
 
     this.addDiagonalLines()
-
     // this.draw()
     return this
   }

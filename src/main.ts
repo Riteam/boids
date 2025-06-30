@@ -1,25 +1,26 @@
 import { Application, Sprite, RenderTexture, Container } from "pixi.js";
-import buildGrid from "./build-grid";
+import GridLines from "./grid-lines";
 import Boids from "./boids";
 import Obstacle from "./obstacle";
 import Path from "./grid-path";
 import V from "./V2D";
-import { gridSize } from "./Config.json"
+import { gridSize, backgroundColor } from "./Config.json"
+
+let paused = false
+let nextFrame = false
+document.addEventListener("keydown", e => {
+  if (e.key === " ") {
+    paused = !paused
+    e.preventDefault()
+  }
+
+  if (e.key === "." && paused) {
+    nextFrame = true;
+    e.preventDefault()
+  }
+});
 
 (async () => {
-  let paused = false
-  let nextFrame = false
-  document.addEventListener("keydown", e => {
-    if (e.key === " ") {
-      paused = !paused
-      e.preventDefault()
-    }
-
-    if (e.key === "." && paused) {
-      nextFrame = true;
-      e.preventDefault()
-    }
-  });
   // Create a new application
   const app = new Application();
 
@@ -29,7 +30,7 @@ import { gridSize } from "./Config.json"
 
   // Initialize the application
   await app.init({
-    background: "#1099bb",
+    background: backgroundColor,
     resizeTo: window,
     antialias: true,
     autoDensity: true,
@@ -55,9 +56,20 @@ import { gridSize } from "./Config.json"
   shadowSprite.position.set(3, 4); // 设置阴影偏移
 
 
+  GridLines.build(gridSize)
 
+  // const gridsTexture = GridLines.g.clone()
+  // gridsTexture.x = 20
+  // gridsTexture.y = 20
+  // gridsTexture.angle = 45
+  // gridsTexture.scale = .5
+  // gridsTexture.mask = obstacleGroup
+
+
+
+  app.stage.addChild(GridLines.g)
+  // app.stage.addChild(gridsTexture)
   app.stage.addChild(obstacleGroup)
-  app.stage.addChild(buildGrid(gridSize))
   app.stage.addChild(shadowSprite)
   app.stage.addChild(ArrowBoids.container)
 

@@ -13,9 +13,9 @@ const alignmentFactor = 1
 const cohesionFactor = 1.4
 
 // 避障力权重
-const avoidanceThreshold = 80
+const avoidanceThreshold = 100
 const avoidanceThreshold2 = 10
-const avoidanceFactor = 1.2
+const avoidanceFactor = 1.4
 const avoidanceFactor2 = 6
 
 const accelerationLimit = 0.1
@@ -202,9 +202,11 @@ export default class Boids {
       // 避障
       const avoidanceSteering = new V(0, 0)
       let count = 0
+      const sqrThreshold2 = avoidanceThreshold2 * avoidanceThreshold2
       // 过滤aabb碰撞到的障碍物
       const nearestObstacles = this.obstacle.filter(o => o.isHitBounds(curr, avoidanceThreshold))
       for (let o of nearestObstacles) {
+
         // debug
         // if (curr === this.#arrows[0]) {
         // this.shape.moveTo(curr.x, curr.y)
@@ -219,9 +221,7 @@ export default class Boids {
           curr.copy(newPos)
         }
 
-        const sqrThreshold2 = avoidanceThreshold2 * avoidanceThreshold2
         const nearestPoints = o.getNearestPoints(curr, avoidanceThreshold)
-        let minDis = Infinity
 
         for (const point of nearestPoints) {
 
@@ -230,7 +230,11 @@ export default class Boids {
             const avoid = V.sub(curr, point)
             const d = avoid.sqrMag()
 
-            minDis = Math.min(minDis, d)
+            // if (d < sqrThreshold2) {
+            //   avoidanceSteering
+            // } else {
+            //   avoidanceSteering.mult(avoidanceFactor)
+            // }
 
             const t = avoid.normalize().div(d || 0.00001)
 
@@ -242,19 +246,20 @@ export default class Boids {
             avoidanceSteering.add(t)
           }
         }
-
-        if (count) {
-          avoidanceSteering
-            .div(count)
-            .normalize()
-            .max(accelerationLimit)
-            .mult(avoidanceFactor)
-
-          if (minDis < sqrThreshold2) {
-            avoidanceSteering.mult(avoidanceFactor2)
-          }
-        }
       }
+
+
+      if (count) {
+        avoidanceSteering
+          .normalize()
+          .div(count)
+          .max(accelerationLimit)
+
+        // if (minDis < sqrThreshold2) {
+        //   avoidanceSteering.mult(avoidanceFactor2)
+        // }
+      }
+
 
       const acc = new V(0, 0)
       acc.add(separationSteering.mult(seprationFactor))

@@ -41,55 +41,8 @@ npm run lint
 
 ## 🎮 Usage Instructions
 
-### Keyboard Controls
-
 - **Spacebar**: Pause/Resume simulation
 - **Period key (.)**: Step-by-step playback in pause mode
-
-### Parameter Configuration
-
-You can adjust the following parameters in `src/Config.json`:
-
-```json
-{
-  "gridSize": 40,           // Grid size
-  "minSpeed": 2.2,          // Minimum speed
-  "maxSpeed": 5,            // Maximum speed
-  "seprationRadius": 20,    // Separation radius
-  "alignmentRadius": 60,    // Alignment radius
-  "cohesionRadius": 60,     // Cohesion radius
-  "seprationFactor": 1.5,   // Separation factor
-  "alignmentFactor": 1,     // Alignment factor
-  "cohesionFactor": 1.4,    // Cohesion factor
-  "avoidanceThreshold": 60  // Obstacle avoidance threshold
-}
-```
-
-## 🎨 Custom Extensions
-
-### Adding New Obstacles
-
-```typescript
-import Obstacle from "./obstacle";
-
-const obstacle = new Obstacle(app);
-// Create custom shape
-obstacle.createPolygonShape([
-  { x: 100, y: 100 },
-  { x: 200, y: 100 },
-  { x: 200, y: 200 },
-  { x: 100, y: 200 }
-]);
-```
-
-### Adjusting Flocking Behavior
-
-```typescript
-import Boids from "./boids";
-
-const boids = new Boids(app, 500); // Create 500 individuals
-boids.setObstacle(obstacle);       // Set obstacles
-```
 
 ## 🤝 Contributing
 

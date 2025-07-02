@@ -5,6 +5,7 @@ import { minSpeed, maxSpeed } from "./Config.json"
 
 const KNOCKED_OUT_TIME = 100
 const defaultColor = 0xFFFF00;
+
 export default class Arrow extends V {
   v: V;
   shape: Graphics;
@@ -63,8 +64,9 @@ export default class Arrow extends V {
     }
     // 后一半时间恢复原速
     else {
-      this.v.sclAdd(this.desired, delta)
-      this.v.max(maxSpeed * (1 - (this.knocked_out_time / halfTime)))
+      const progress = 1 - (this.knocked_out_time / halfTime)
+      this.v.sclAdd(this.desired.mult(progress), delta)
+      this.v.max(maxSpeed * progress)
     }
 
     this.sclAdd(this.v, delta);

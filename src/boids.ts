@@ -246,7 +246,7 @@ export default class Boids {
       }
 
 
-      const acc = new V(0, 0)
+      const acc = new V()
       acc.add(separationSteering.mult(seprationFactor))
       acc.add(alignmentSteering.mult(alignmentFactor))
       acc.add(cohesionSteering.mult(cohesionFactor))

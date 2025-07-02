@@ -13,7 +13,7 @@ export default {
     return randomStore[randomStoreIndex++]
   },
 
-  swap(arr: any[], a: number, b: number) {
+  swap(arr: [], a: number, b: number) {
     const temp = arr[a]
     arr[a] = arr[b]
     arr[b] = temp

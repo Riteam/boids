@@ -198,7 +198,7 @@ export default class Boids {
       const nearestObstacles = this.obstacle.filter(o => o.isHitBounds(curr, avoidanceThreshold))
       if (nearestObstacles.length > 0) {
         let count = 0
-        for (let o of nearestObstacles) {
+        for (const o of nearestObstacles) {
 
           // debug
           // if (curr === this.#arrows[0]) {

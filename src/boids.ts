@@ -212,11 +212,9 @@ export default class Boids {
             const nearestPoint = o.pushPointToNearestEdge(curr)
             const normal = V.sub(nearestPoint, curr).normalize() // 法向量
             curr.v.reflect(normal) // 反射
-              .mult(0.5)
             curr.copy(nearestPoint)
 
-            curr.knocked_out = true
-            curr.knocked_out_time = 30
+            curr.setKnockedOut()
           }
 
           const nearestPoints = o.getNearestPoints(curr, avoidanceThreshold)

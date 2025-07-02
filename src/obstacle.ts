@@ -158,33 +158,33 @@ export default class Obstacle {
    * @param end 线段终点向量
    * @returns 点到线段的最短距离
    */
-  private pointToLineDistance(point: V, start: V, end: V): number {
-    const start_point = V.sub(point, start);
-    const start_end = V.sub(end, start);
+  // private pointToLineDistance(point: V, start: V, end: V): number {
+  //   const start_point = V.sub(point, start);
+  //   const start_end = V.sub(end, start);
 
-    // 计算点积和线段长度的平方
-    const dotProduct = start_point.dot(start_end);
-    // console.log(dot === );
+  //   // 计算点积和线段长度的平方
+  //   const dotProduct = start_point.dot(start_end);
+  //   // console.log(dot === );
 
-    // const lenSq = C * C + D * D;
-    const lenSqrt = start_end.sqrMag();
+  //   // const lenSq = C * C + D * D;
+  //   const lenSqrt = start_end.sqrMag();
 
-    // 如果线段长度为0，返回点到起点的距离
-    if (lenSqrt === 0) {
-      return start_point.mag();
-    }
+  //   // 如果线段长度为0，返回点到起点的距离
+  //   if (lenSqrt === 0) {
+  //     return start_point.mag();
+  //   }
 
-    // 计算投影参数，并限制在[0,1]范围内
-    const t = _.clamp(dotProduct / lenSqrt, 0, 1)
+  //   // 计算投影参数，并限制在[0,1]范围内
+  //   const t = _.clamp(dotProduct / lenSqrt, 0, 1)
 
-    // 计算线段上最近点的坐标
-    const nearestPoint = start.clone().sclAdd(start_end, t);
+  //   // 计算线段上最近点的坐标
+  //   const nearestPoint = start.clone().sclAdd(start_end, t);
 
-    // 计算点到最近点的距离
-    const distance = V.sub(point, nearestPoint).mag()
+  //   // 计算点到最近点的距离
+  //   const distance = V.sub(point, nearestPoint).mag()
 
-    return distance
-  }
+  //   return distance
+  // }
 
   getNearestPoint(point: V, start: V, end: V): V {
     const start_point = V.sub(point, start);

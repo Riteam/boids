@@ -6,7 +6,7 @@
   "scripts": {
     "start": "npm run dev",
     "build": "npm run lint && tsc && vite build",
-    "staging": "npm run lint && tsc && vite build --mode staging",
+    "build:staging": "npm run lint && tsc && vite build --mode staging",
     "lint": "eslint .",
     "dev": "vite"
   },

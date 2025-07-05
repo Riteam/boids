@@ -6,7 +6,7 @@ import Path from "./grid-path";
 import V from "./V2D";
 import { gridSize, backgroundColor } from "./Config.json"
 
-const noObs = import.meta.env.VITE_NO_OBS || false
+const noObs = import.meta.env.VITE_NO_OBS === 'true'
 
 let paused = false
 let nextFrame = false

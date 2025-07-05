@@ -6,6 +6,8 @@ import Path from "./grid-path";
 import V from "./V2D";
 import { gridSize, backgroundColor } from "./Config.json"
 
+const noObs = import.meta.env.VITE_NO_OBS || false
+
 let paused = false
 let nextFrame = false
 document.addEventListener("keydown", e => {
@@ -43,9 +45,11 @@ document.addEventListener("keydown", e => {
   const ArrowBoids = new Boids(app, 200)
 
   const obstacleGroup = new Container()
-  ArrowBoids.addObstacle(createLetterJ(obstacleGroup, 240, 280))
-  ArrowBoids.addObstacle(createLetterR(obstacleGroup, 440, 280))
-  ArrowBoids.addObstacle(createLetterC(obstacleGroup, 680, 280))
+  if (!noObs) {
+    ArrowBoids.addObstacle(createLetterJ(obstacleGroup, 240, 280))
+    ArrowBoids.addObstacle(createLetterR(obstacleGroup, 440, 280))
+    ArrowBoids.addObstacle(createLetterC(obstacleGroup, 680, 280))
+  }
 
 
   const shadowTexture = RenderTexture.create({ width: app.screen.width, height: app.screen.height });

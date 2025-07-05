@@ -1,11 +1,12 @@
 {
-  "name": "koi",
+  "name": "boids",
   "version": "0.0.0",
   "private": true,
   "type": "module",
   "scripts": {
     "start": "npm run dev",
     "build": "npm run lint && tsc && vite build",
+    "staging": "npm run lint && tsc && vite build --mode staging",
     "lint": "eslint .",
     "dev": "vite"
   },

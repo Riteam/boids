@@ -10,17 +10,20 @@ const noObs = import.meta.env.VITE_NO_OBS === 'true'
 
 let paused = false
 let nextFrame = false
-document.addEventListener("keydown", e => {
-  if (e.key === " ") {
-    paused = !paused
-    e.preventDefault()
-  }
 
-  if (e.key === "." && paused) {
-    nextFrame = true;
-    e.preventDefault()
-  }
-});
+if (!noObs) {
+  document.addEventListener("keydown", e => {
+    if (e.key === " ") {
+      paused = !paused
+      e.preventDefault()
+    }
+
+    if (e.key === "." && paused) {
+      nextFrame = true;
+      e.preventDefault()
+    }
+  });
+}
 
 (async () => {
   // Create a new application

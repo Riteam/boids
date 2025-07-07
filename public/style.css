@@ -1,15 +1,15 @@
 body {
     margin: 0;
     padding: 0;
-    color: rgba(255, 255, 255, 0.87);
-    background-color: #1099bb;
+    color: #333;
+    background: #1099bb;
 }
 
 #app {
     width: 100%;
-    height: 100vh;
-    overflow: hidden;
+    height: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
+    overflow: hidden;
 }

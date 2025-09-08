@@ -1,13 +1,13 @@
 {
   "gridSize": 40,
-  "minSpeed": 2.2,
-  "maxSpeed": 5,
-  "seprationRadius": 20,
-  "alignmentRadius": 60,
-  "cohesionRadius": 60,
-  "seprationFactor": 1.5,
-  "alignmentFactor": 1,
-  "cohesionFactor": 1.4,
-  "avoidanceThreshold": 60,
-  "backgroundColor": "0x1099bb"
+  "minSpeed": 1.4,
+  "maxSpeed": 4,
+  "visionRadius": 25,
+  "alignmentFactor": 1.1,
+  "cohesionFactor": 1,
+  "seprationFactor": 1.2,
+  "avoidanceThreshold": 100,
+  "accelerationLimit": 0.1,
+  "backgroundColor": "0x1099bb",
+  "maxNeighbors": 8
 }

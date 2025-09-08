@@ -3,20 +3,19 @@ import { Application, Container, Graphics } from 'pixi.js'
 import V from './V2D'
 import Obstacle from './obstacle'
 import QuadTree from './quadtree'
+import {
+  maxSpeed,
+  seprationFactor,
+  alignmentFactor,
+  cohesionFactor,
+  accelerationLimit,
+  avoidanceThreshold,
+  maxNeighbors,
+  visionRadius,
+} from './Config.json'
+import Utils from './Utils'
 
-const seprationRadius = 20
-const alignmentRadius = 60
-const cohesionRadius = 60
-
-const seprationFactor = 1.5
-const alignmentFactor = 1
-const cohesionFactor = 1.6
-
-// 避障力权重
-const avoidanceThreshold = 100
-
-const accelerationLimit = 0.1
-
+const sqrVisionRadius = visionRadius * visionRadius
 export default class Boids {
   container: Container
   #arrows: Arrow[]
@@ -91,6 +90,11 @@ export default class Boids {
     }
   }
 
+  // 屏幕尺寸变化时重建四叉树边界
+  resize(width: number, height: number) {
+    this.quadTree = new QuadTree({ x: 0, y: 0, width, height }, 10, 4)
+  }
+
   // 检查两个向量之间的角度差是否在180度范围内
   private isInFrontView(currentArrow: Arrow, otherArrow: V): boolean {
     // 计算从当前箭头到其他箭头的方向向量
@@ -100,6 +104,11 @@ export default class Boids {
     )
 
     // 获取当前箭头的速度方向（视角方向）
+    const currentSpeed = currentArrow.v.mag()
+    // 速度极小时，全向可见，避免默认右向偏置
+    if (currentSpeed < 1e-6) {
+      return true
+    }
     const currentDirection = currentArrow.v.clone().normalize()
 
     // 计算方向向量到其他箭头的角度
@@ -113,11 +122,11 @@ export default class Boids {
     }
 
     // 检查是否在前方180度范围内（π弧度）
-    return angleDiff <= Math.PI * 0.75
+    return angleDiff <= Math.PI * 1
   }
 
   drawDebug(arrow: Arrow) {
-    const { desired, x, y } = arrow
+    const { acc: desired, x, y } = arrow
     const { shape } = this
     const angle = desired.angle()
     if (desired.x !== 0 || desired.y !== 0) {
@@ -126,8 +135,7 @@ export default class Boids {
       shape.stroke({ color: 'brown', width: 2 })
     }
 
-    this.shape.circle(x, y, seprationRadius)
-    this.shape.circle(x, y, cohesionRadius)
+    this.shape.circle(x, y, visionRadius)
     this.shape.stroke({ color: 'pink', width: 2, alpha: 0.5 })
   }
 
@@ -141,25 +149,32 @@ export default class Boids {
   }
 
   getNeibours(curr: Arrow) {
-    const sqrDistance = alignmentRadius * alignmentRadius
-    const neibours = []
-
     // 使用四叉树查询范围内的邻居
-    const candidates = this.quadTree.retrieve(curr, alignmentRadius)
+    const candidates = this.quadTree.retrieve(curr, visionRadius)
 
-    // 过滤出视野内的邻居
+    // 过滤出视野内的邻居，并用水库抽样限制数量为 maxNeighbors
+    const reservoir: Arrow[] = []
+    let seen = 0
     for (const arrow of candidates) {
       const d = curr.sqrDist(arrow)
       if (
         curr !== arrow &&
-        d < sqrDistance &&
+        d < sqrVisionRadius &&
         this.isInFrontView(curr, arrow)
       ) {
-        neibours.push(arrow)
+        if (maxNeighbors === 0 || reservoir.length < maxNeighbors) {
+          reservoir.push(arrow)
+        } else {
+          // 以 maxNeighbors/seen 的概率替换
+          const j = Math.floor(Utils.random() * (seen + 1))
+          if (j < maxNeighbors) reservoir[j] = arrow
+        }
+        seen++
       }
     }
 
-    return neibours
+    return reservoir
+    // return candidates
   }
 
   update(delta: number) {
@@ -172,53 +187,41 @@ export default class Boids {
       const neibours = this.getNeibours(curr)
 
       // 分离
-      const separationSteering = new V(0, 0)
-      if (neibours.length > 0) {
-        const sqrSeprationRadius = seprationRadius * seprationRadius
-        let count = 0
-        for (let i = 0; i < neibours.length; i++) {
-          const n = neibours[i]
-          const d = curr.sqrDist(n)
-          if (d < sqrSeprationRadius) {
-            count++
-            separationSteering.add(
-              curr
-                .clone()
-                .sub(n)
-                .normalize()
-                .div(d || 0.00001)
-            )
-          }
-        }
+      const separationSteering = new V()
+      let count = 0
+      for (const n of neibours) {
+        const d = curr.sqrDist(n)
+        count++
 
-        if (count) {
-          separationSteering.div(count).normalize().max(accelerationLimit)
-        }
+        const dd = 1 / (d || 0.00001)
+        separationSteering.x += (curr.x - n.x) * dd
+        separationSteering.y += (curr.y - n.y) * dd
+      }
+
+      if (count) {
+        separationSteering.setMag(maxSpeed).sub(curr.v).max(accelerationLimit)
       }
 
       // 对齐
-      const alignmentSteering = new V(0, 0)
-      if (neibours.length > 0) {
-        for (let i = 0; i < neibours.length; i++) {
-          alignmentSteering.add(neibours[i].v)
-        }
-        alignmentSteering
-          .div(neibours.length)
-          .normalize()
-          .sub(curr.v)
-          .max(accelerationLimit)
+      const alignmentSteering = new V()
+      for (const n of neibours) {
+        // const bias = 1.5 ** n.v.dot(curr.v)
+        // alignmentSteering.sclAdd(n.v, bias)
+        alignmentSteering.add(n.v)
       }
+      alignmentSteering.setMag(maxSpeed).sub(curr.v).max(accelerationLimit)
 
       // 聚集
-      const cohesionSteering = new V(0, 0)
-      if (neibours.length > 0) {
-        for (let i = 0; i < neibours.length; i++) {
-          cohesionSteering.add(neibours[i])
+      const cohesionSteering = new V()
+      if (neibours.length) {
+        for (const n of neibours) {
+          cohesionSteering.add(n)
         }
+
         cohesionSteering
           .div(neibours.length)
           .sub(curr)
-          .normalize()
+          .setMag(maxSpeed)
           .sub(curr.v)
           .max(accelerationLimit)
       }
@@ -273,12 +276,12 @@ export default class Boids {
       }
 
       const acc = new V()
-      acc.add(separationSteering.mult(seprationFactor))
-      acc.add(alignmentSteering.mult(alignmentFactor))
-      acc.add(cohesionSteering.mult(cohesionFactor))
+      acc.sclAdd(separationSteering, seprationFactor)
+      acc.sclAdd(alignmentSteering, alignmentFactor)
+      acc.sclAdd(cohesionSteering, cohesionFactor)
       acc.add(avoidanceSteering)
 
-      curr.desired = acc
+      curr.acc = acc
       curr.move(delta)
       curr.draw()
 

@@ -45,22 +45,22 @@ if (!noObs) {
     resizeTo: window,
     antialias: true,
     autoDensity: true,
-    resolution: window.devicePixelRatio || 1,
+    resolution: Math.min(2, window.devicePixelRatio || 1),
   })
 
   // Append the application canvas to the document body
   document.getElementById('pixi-container')!.appendChild(app.canvas)
 
-  const ArrowBoids = new Boids(app, 200)
+  const ArrowBoids = new Boids(app, 800)
 
   const obstacleGroup = new Container()
-  if (!noObs) {
+  if (!noObs && window.innerWidth > 2000) {
     ArrowBoids.addObstacle(createLetterJ(obstacleGroup, 240, 280))
-    // ArrowBoids.addObstacle(createLetterR(obstacleGroup, 440, 280))
-    // ArrowBoids.addObstacle(createLetterC(obstacleGroup, 680, 280))
+    ArrowBoids.addObstacle(createLetterR(obstacleGroup, 440, 280))
+    ArrowBoids.addObstacle(createLetterC(obstacleGroup, 680, 280))
   }
 
-  const shadowTexture = RenderTexture.create({
+  let shadowTexture = RenderTexture.create({
     width: app.screen.width,
     height: app.screen.height,
   })
@@ -81,11 +81,27 @@ if (!noObs) {
 
   const pulses: { x: number; y: number; start: number; duration: number }[] = []
 
-  // 左键点击：让所有箭头远离点击点
-  app.canvas.addEventListener('mousedown', (e: MouseEvent) => {
-    if (e.button !== 0) return // 仅左键
-    const click = new V(e.offsetX, e.offsetY)
-    ArrowBoids.repulseFrom(click, 3)
+  // 尺寸变化时：重建网格、四叉树、阴影纹理
+  const handleResize = () => {
+    GridLines.build(gridSize)
+    ArrowBoids.resize(app.screen.width, app.screen.height)
+    shadowTexture.destroy(true)
+    shadowTexture = RenderTexture.create({
+      width: app.screen.width,
+      height: app.screen.height,
+    })
+    shadowSprite.texture = shadowTexture
+  }
+  window.addEventListener('resize', handleResize)
+
+  // 指针按下：让所有箭头远离点击/触摸点
+  app.canvas.addEventListener('pointerdown', (e: PointerEvent) => {
+    if (e.button !== 0 && e.pointerType === 'mouse') return // 仅鼠标左键，其它指针类型直接通过
+    const rect = app.canvas.getBoundingClientRect()
+    const x = (e.clientX - rect.left) * (app.screen.width / rect.width)
+    const y = (e.clientY - rect.top) * (app.screen.height / rect.height)
+    const click = new V(x, y)
+    ArrowBoids.repulseFrom(click, 6, 300)
     pulses.push({
       x: click.x,
       y: click.y,

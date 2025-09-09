@@ -52,6 +52,8 @@ export default class Boids {
       // const arrow = new Arrow(app, app.screen.width / 2, app.screen.height / 2)
       const arrow = new Arrow(app, 100, 100)
       this.#arrows.push(arrow)
+      // 先添加轨迹层，再添加箭头主体，保证主体在上
+      this.container.addChild(arrow.trailShape)
       this.container.addChild(arrow.shape)
     }, 10)
 
@@ -61,6 +63,7 @@ export default class Boids {
 
   addArrow(arrow: Arrow) {
     this.#arrows.push(arrow)
+    this.container.addChild(arrow.trailShape)
     this.container.addChild(arrow.shape)
   }
 
@@ -188,28 +191,27 @@ export default class Boids {
 
       // 分离
       const separationSteering = new V()
-      let count = 0
-      for (const n of neibours) {
-        const d = curr.sqrDist(n)
-        count++
+      if (neibours.length) {
+        for (const n of neibours) {
+          const d = curr.sqrDist(n)
 
-        const dd = 1 / (d || 0.00001)
-        separationSteering.x += (curr.x - n.x) * dd
-        separationSteering.y += (curr.y - n.y) * dd
-      }
-
-      if (count) {
+          const dd = 1 / (d || 0.00001)
+          separationSteering.x += (curr.x - n.x) * dd
+          separationSteering.y += (curr.y - n.y) * dd
+        }
         separationSteering.setMag(maxSpeed).sub(curr.v).max(accelerationLimit)
       }
 
       // 对齐
       const alignmentSteering = new V()
-      for (const n of neibours) {
-        // const bias = 1.5 ** n.v.dot(curr.v)
-        // alignmentSteering.sclAdd(n.v, bias)
-        alignmentSteering.add(n.v)
+      if (neibours.length) {
+        for (const n of neibours) {
+          // const bias = 1.5 ** n.v.dot(curr.v)
+          // alignmentSteering.sclAdd(n.v, bias)
+          alignmentSteering.add(n.v)
+        }
+        alignmentSteering.setMag(maxSpeed).sub(curr.v).max(accelerationLimit)
       }
-      alignmentSteering.setMag(maxSpeed).sub(curr.v).max(accelerationLimit)
 
       // 聚集
       const cohesionSteering = new V()

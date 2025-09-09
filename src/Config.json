@@ -3,11 +3,11 @@
   "minSpeed": 1.4,
   "maxSpeed": 4,
   "visionRadius": 25,
-  "alignmentFactor": 1.1,
+  "alignmentFactor": 0.9,
   "cohesionFactor": 1,
-  "seprationFactor": 1.2,
+  "seprationFactor": 1.1,
   "avoidanceThreshold": 100,
-  "accelerationLimit": 0.1,
+  "accelerationLimit": 0.2,
   "backgroundColor": "0x1099bb",
-  "maxNeighbors": 8
+  "maxNeighbors": 15
 }

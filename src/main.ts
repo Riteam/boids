@@ -11,6 +11,7 @@ import Obstacle from './obstacle'
 import Path from './grid-path'
 import V from './V2D'
 import { gridSize, backgroundColor } from './Config.json'
+import { setTheme, type Theme } from './theme'
 
 const noObs = import.meta.env.VITE_NO_OBS === 'true'
 
@@ -50,6 +51,18 @@ if (!noObs) {
 
   // Append the application canvas to the document body
   document.getElementById('pixi-container')!.appendChild(app.canvas)
+  const darkBtn = document.getElementById('dark')
+  const lightBtn = document.getElementById('light')
+  darkBtn!.addEventListener('click', () => {
+    switchTheme('dark')
+    darkBtn!.style.display = 'none'
+    lightBtn!.style.display = ''
+  })
+  lightBtn!.addEventListener('click', () => {
+    switchTheme('light')
+    lightBtn!.style.display = 'none'
+    darkBtn!.style.display = ''
+  })
 
   const ArrowBoids = new Boids(app, 800)
 
@@ -94,6 +107,38 @@ if (!noObs) {
   }
   window.addEventListener('resize', handleResize)
 
+  // 主题切换
+  function switchTheme(theme: Theme) {
+    setTheme(theme)
+    if (theme === 'dark') {
+      app.renderer.background.color = 0x161616
+      // 暗色模式略降分辨率，减少像素填充压力
+      const prevResolution = app.renderer.resolution
+      const targetResolution = Math.min(1.5, window.devicePixelRatio || 1)
+      if (targetResolution !== prevResolution) {
+        app.renderer.resolution = targetResolution
+        handleResize()
+      }
+      GridLines.g.visible = false
+      shadowSprite.visible = false
+    } else {
+      app.renderer.background.color = Number(backgroundColor)
+      // 恢复分辨率
+      const prevResolution = app.renderer.resolution
+      const targetResolution = Math.min(2, window.devicePixelRatio || 1)
+      if (targetResolution !== prevResolution) {
+        app.renderer.resolution = targetResolution
+        handleResize()
+      }
+      GridLines.g.visible = true
+      shadowSprite.visible = true
+    }
+  }
+
+  // 暴露到全局，便于外部调用
+  ;(window as unknown as { switchTheme?: (t: Theme) => void }).switchTheme =
+    switchTheme
+
   // 指针按下：让所有箭头远离点击/触摸点
   app.canvas.addEventListener('pointerdown', (e: PointerEvent) => {
     if (e.button !== 0 && e.pointerType === 'mouse') return // 仅鼠标左键，其它指针类型直接通过
@@ -111,11 +156,14 @@ if (!noObs) {
   })
 
   const update = (delta: number) => {
-    app.renderer.render({
-      container: ArrowBoids.container,
-      target: shadowTexture,
-      clear: true,
-    })
+    // 暗色模式下不渲染阴影
+    if (shadowSprite.visible) {
+      app.renderer.render({
+        container: ArrowBoids.container,
+        target: shadowTexture,
+        clear: true,
+      })
+    }
     // 绘制脉冲：1s内半径线性增大、透明度线性减小
     const now = performance.now()
     pulseLayer.clear()

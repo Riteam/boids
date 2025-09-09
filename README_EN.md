@@ -2,7 +2,7 @@
 
 English | [中文](README.md)
 
-A Boids algorithm demonstration project implemented with Pixi.js v8.0, featuring quad-tree optimization for neighbor lookup. In addition to basic flocking behavior, obstacle avoidance functionality has been added.
+A Boids algorithm demonstration project implemented with Pixi.js v8.0, using a quadtree to optimize neighbor lookup. In addition to basic flocking behavior, a theme switcher is included.
 
 🌐 **Live Demo**: [https://riteam.github.io/boids/](https://riteam.github.io/boids/)
 
@@ -41,8 +41,15 @@ npm run lint
 
 ## 🎮 Usage Instructions
 
+### Mouse Controls
+
+- **Mouse Left Button / Touch**: Create repulsive force
+- **Click 🌙/☀️**: Toggle dark/light mode
+
+### Keyboard Controls
+
 - **Spacebar**: Pause/Resume simulation
-- **Period key (.)**: Step-by-step playback in pause mode
+- **Period key (.)**: Step-by-step playback while paused
 
 ## 🤝 Contributing
 
@@ -61,4 +68,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-⭐ If this project helps you, please give it a star! 
+⭐ If this project helps you, please give it a star!
